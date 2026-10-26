@@ -113,6 +113,11 @@ Settle the **writing style** as well — `style` in the topology, `ste100` (the 
 coordinator's replies and design documents in ASD-STE100 Simplified Technical English. Step 4
 has the values.
 
+Settle **where the rules land** — `rules` in the topology, `tracked` (the default) or `local`.
+Ask whether any repo is shared with people outside this system. The rendered rules carry this
+machine's absolute paths and pane IDs, so in a team repo they must stay out of commits, and a
+team's own `CLAUDE.md` must stay untouched. Step 4 has the values.
+
 Done when the user has confirmed the graph. Do not write a file before this.
 
 ## 4. Write the topology
@@ -208,6 +213,16 @@ treated as a typo to guess at. No project-tier template carries the rule: a work
 code and a fixed-format verdict line, so a prose style there would add load and change
 nothing.
 
+`rules` is where every repo's rendered rules land:
+
+| Value | Rules file | Agent docs | Use when |
+|---|---|---|---|
+| `tracked` | `CLAUDE.md` | `docs/agents/` | default. Every repo is yours, and the rules are versioned with it |
+| `local` | `CLAUDE.local.md` | `.claude/herdr/docs/` | a repo is shared with a team. Both paths go into that repo's `.git/info/exclude`, so nothing reaches a commit, and a team `CLAUDE.md` stays as it is — Claude Code loads both files |
+
+One value for the whole system, because the tiers point at each other's docs by relative path.
+Elsewhere in this file, read `CLAUDE.md` and `docs/agents/` as the chosen layout's paths.
+
 Write it once, at the system root. Verify immediately — the first command checks the graph's
 internal consistency, the second checks it against what is actually running:
 
@@ -217,7 +232,7 @@ internal consistency, the second checks it against what is actually running:
 ```
 
 `--check` rejects a second parentless role, a parent/children pair that disagrees, two roles
-on one pane, a mixed ledger prefix, an unknown `style` value, an orchestrator with no `gates`
+on one pane, a mixed ledger prefix, an unknown `style` or `rules` value, an orchestrator with no `gates`
 field or a malformed gate list, an orchestrator whose children are not exactly one worker,
 and a project tier whose panes do not share a cwd. It also rejects a topology living inside a
 repo it describes, and any repo-local copy of it. Pending gates are reported as a warning and
@@ -259,6 +274,9 @@ about the rules while both believe they are following them.
 Unresolved placeholders fail the render rather than producing a blank — fix the topology, never
 the template. If you find yourself wanting to pass a value by hand, the value belongs in
 `topology.json` and `render-rules.py` should derive it.
+
+With `"rules": "local"` there is nothing to merge: the render writes `CLAUDE.local.md` beside
+whatever `CLAUDE.md` the repo has, and never touches it.
 
 When a `CLAUDE.md` already exists and holds anything the user wrote, merge rather than
 overwrite: keep their sections and replace only the ones this skill owns. Show a diff before

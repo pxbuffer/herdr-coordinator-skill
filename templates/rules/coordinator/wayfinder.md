@@ -60,7 +60,7 @@ them is a separate decision, made after the map is finished.
 
 ## Finishing
 
-Follow the map's Notes, and `CLAUDE.md`.
+Follow the map's Notes, and `{{RULES_FILE}}`.
 
 Give every long shell command a time limit, and give every wait loop a deadline.
 

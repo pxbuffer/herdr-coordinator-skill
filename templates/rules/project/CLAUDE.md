@@ -52,7 +52,7 @@ resolves in one hop instead of three.
   `needs-info` and {{TOP}} will carry it across. `{{TOPOLOGY}}` lists what exists; a repo
   appearing there is still a repo you may not read.
 
-`docs/agents/design-docs.md` covers how to use what you read.
+`{{AGENT_DOCS}}/design-docs.md` covers how to use what you read.
 
 ## {{MAIN}} — orchestrator
 
@@ -162,7 +162,7 @@ you find missing goes up as verdict detail.
 
 ## Where things live
 
-- `docs/agents/design-docs.md` — using the documents a brief names
-- `{{DESIGN_REL}}/docs/agents/orchestration.md` — the protocol, in full
+- `{{AGENT_DOCS}}/design-docs.md` — using the documents a brief names
+- `{{DESIGN_REL}}/{{AGENT_DOCS}}/orchestration.md` — the protocol, in full
 - `{{TOPOLOGY}}` — the role graph the scripts read. It lives above this repo, is shared by
   the whole system, and {{TOP}} is its only editor

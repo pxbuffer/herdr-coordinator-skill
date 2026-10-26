@@ -13,7 +13,7 @@ requirements in `docs/br/`, and the design docs in `docs/design/`.
 - Keep paragraphs to 6 sentences or fewer.
 
 Technical names are allowed: product names, API names, file paths, code identifiers, and
-terms defined in the glossary (`docs/agents/domain.md`).
+terms defined in the glossary (`{{AGENT_DOCS}}/domain.md`).
 
 ## Why this tier only
 

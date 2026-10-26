@@ -16,4 +16,5 @@ Report once, when you finish or stop:
 {{SCRIPTS}}/report.sh {{BEAD}} bounced    "<why this is bigger or other than the brief>"
 ```
 
-`CLAUDE.md` in this project says how your role carries this out.
+This project's rules file (`CLAUDE.md`, or `CLAUDE.local.md` where the rules are
+local) says how your role carries this out.

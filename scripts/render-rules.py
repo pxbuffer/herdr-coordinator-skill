@@ -14,7 +14,7 @@ frontend and backend are one possible system, not the shape.
 
 This script only ever READS topology.json. Gate commands in particular are
 hand-authored there and nothing here rewrites them: the rendered "Gates" section
-in a project's CLAUDE.md is output, and the topology is the input.
+in a project's rules file is output, and the topology is the input.
 """
 import json
 import os
@@ -35,6 +35,15 @@ DEFAULT_STYLE = "ste100"
 # dispatched to. An ABSENT gates field stays an error, so pending is always a
 # deliberate choice rather than an oversight.
 GATES_PENDING = "pending"
+
+# Where the rendered rules land: (rules file, agent docs directory). "tracked"
+# writes CLAUDE.md and docs/agents/ for repos that version them. "local" writes
+# CLAUDE.local.md and .claude/herdr/docs/ and lists both in the repo's
+# .git/info/exclude, for team repos: the rules carry this machine's absolute
+# paths and pane IDs, which must never reach a shared commit.
+LAYOUTS = {"tracked": ("CLAUDE.md", "docs/agents"),
+           "local": ("CLAUDE.local.md", ".claude/herdr/docs")}
+DEFAULT_LAYOUT = "tracked"
 
 
 def find_topology(start: Path) -> Path:
@@ -82,7 +91,7 @@ def check_no_shadow_copies(topo_path: Path, roles: dict) -> list:
     return errors
 
 
-def validate(roles: dict, style: str) -> dict:
+def validate(roles: dict, style: str, layout: str) -> dict:
     """Fail loudly on anything that would make the rendered rules lie."""
     errors = []
     warnings = []
@@ -90,6 +99,9 @@ def validate(roles: dict, style: str) -> dict:
     if style not in STYLES:
         errors.append(f"style must be one of {' | '.join(STYLES)}, got {style!r} "
                       f"(omit the field for the {DEFAULT_STYLE!r} default)")
+    if layout not in LAYOUTS:
+        errors.append(f"rules must be one of {' | '.join(LAYOUTS)}, got {layout!r} "
+                      f"(omit the field for the {DEFAULT_LAYOUT!r} default)")
 
     tops = [n for n, r in roles.items() if not r.get("parent")]
     if len(tops) != 1:
@@ -179,7 +191,7 @@ def validate(roles: dict, style: str) -> dict:
                 for c in children:
                     if roles[c].get("cwd") != r.get("cwd"):
                         errors.append(f"{c} shares no cwd with its orchestrator {n} — a project "
-                                      f"tier shares one repo and therefore one CLAUDE.md")
+                                      f"tier shares one repo and therefore one rules file")
 
     if errors:
         sys.exit("render-rules: topology is inconsistent:\n" + "\n".join("  - " + e for e in errors))
@@ -221,6 +233,30 @@ def render(template: Path, out: Path, values: dict, dry: bool) -> None:
     print(("would render " if dry else "") + str(out))
 
 
+def exclude(repo: Path, paths: list, dry: bool) -> None:
+    """List rendered paths in the repo's own .git/info/exclude, never a .gitignore:
+    the exclusion is as local as the files, so a team repo shows no trace of it."""
+    r = subprocess.run(["git", "-C", str(repo), "rev-parse", "--git-path", "info/exclude"],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        sys.exit(f"render-rules: {repo} is not a git repository, so the local rules "
+                 f"there cannot be kept out of its commits")
+    f = Path(r.stdout.strip())
+    if not f.is_absolute():
+        f = repo / f
+    have = set(f.read_text().splitlines()) if f.exists() else set()
+    missing = [p for p in paths if p not in have]
+    if not missing:
+        return
+    if not dry:
+        f.parent.mkdir(parents=True, exist_ok=True)
+        with f.open("a") as fh:
+            fh.write(("" if not have or f.read_text().endswith("\n") else "\n")
+                     + "# herdr-coordinator: rendered rules, local to this machine\n"
+                     + "".join(p + "\n" for p in missing))
+    print(("would exclude " if dry else "excluded ") + ", ".join(missing) + f" in {repo.name}/")
+
+
 def main() -> int:
     check = "--check" in sys.argv
     dry = "--dry-run" in sys.argv
@@ -231,7 +267,8 @@ def main() -> int:
     topo = json.loads(topo_path.read_text())
     roles = topo["roles"]
     style = topo.get("style", DEFAULT_STYLE)
-    meta = validate(roles, style)
+    layout = topo.get("rules", DEFAULT_LAYOUT)
+    meta = validate(roles, style, layout)
     shadows = check_no_shadow_copies(topo_path, roles)
     if shadows:
         sys.exit("render-rules: topology is inconsistent:\n"
@@ -243,7 +280,8 @@ def main() -> int:
     projects = {n: Path(roles[n]["cwd"]) for n in orchs}
 
     print(f"topology: {topo_path}")
-    print(f"coordinator: {top} ({design_cwd.name}/), ledger prefix {prefix}-, style {style}")
+    print(f"coordinator: {top} ({design_cwd.name}/), ledger prefix {prefix}-, style {style}, "
+          f"rules {layout}")
     print(f"projects ({len(projects)}): " + ", ".join(f"{n}→{p.name}/" for n, p in projects.items()))
     for w in meta["warnings"]:
         print(f"warning: {w}")
@@ -251,6 +289,11 @@ def main() -> int:
         print("topology is consistent"
               + (f" ({len(meta['warnings'])} warning(s) above)" if meta["warnings"] else ""))
         return 0
+
+    rules_file, agent_docs = LAYOUTS[layout]
+    if layout == "local":
+        for repo in [design_cwd, *projects.values()]:
+            exclude(repo, [f"/{rules_file}", f"/{agent_docs}/"], dry)
 
     labels = "\n".join(f"- `project-{p.name}` — the `{n}` tier" for n, p in projects.items())
     chan = channels(roles, top, prefix)
@@ -264,23 +307,24 @@ def main() -> int:
             "## Writing style\n\n"
             "Write every reply and every document you author in ASD-STE100 Simplified\n"
             "Technical English: active voice, one idea per sentence, 20 words or fewer.\n"
-            "`docs/agents/writing-style.md` has the full rule and the allowed exceptions.\n"
+            f"`{agent_docs}/writing-style.md` has the full rule and the allowed exceptions.\n"
             "It binds this tier only.\n\n")
-        style_pointer = "\n- `docs/agents/writing-style.md` — the ASD-STE100 writing rule"
+        style_pointer = f"\n- `{agent_docs}/writing-style.md` — the ASD-STE100 writing rule"
 
     topo_abs = topo_path.resolve()
     base = dict(PROJECT=design_cwd.name, PREFIX=prefix, TOP=top, SCRIPTS=str(HERE),
                 TOPOLOGY=os.path.relpath(topo_abs, design_cwd),
                 CHANNELS=chan, PROJECT_LABELS=labels,
                 CHILD_EXAMPLE=orchs[0] if orchs else top,
-                STYLE_SECTION=style_section, STYLE_POINTER=style_pointer)
-    render(cdir / "CLAUDE.md", design_cwd / "CLAUDE.md", base, dry)
+                STYLE_SECTION=style_section, STYLE_POINTER=style_pointer,
+                RULES_FILE=rules_file, AGENT_DOCS=agent_docs)
+    render(cdir / "CLAUDE.md", design_cwd / rules_file, base, dry)
     base["SCRATCH"] = f"/tmp/{prefix}-maps"
     for name in ("orchestration", "ledger", "triage-labels", "domain", "wayfinder"):
-        render(cdir / f"{name}.md", design_cwd / "docs/agents" / f"{name}.md", base, dry)
+        render(cdir / f"{name}.md", design_cwd / agent_docs / f"{name}.md", base, dry)
 
     # The style rule is coordinator-only, so it renders only here and only when asked.
-    style_doc = design_cwd / "docs/agents/writing-style.md"
+    style_doc = design_cwd / agent_docs / "writing-style.md"
     if style == "none":
         if style_doc.exists() and not dry:
             style_doc.unlink()
@@ -319,9 +363,10 @@ def main() -> int:
         vals = dict(PROJECT=cwd.name, PREFIX=prefix, TOP=top, MAIN=orch,
                     AGENT=workers[0], DESIGN_REL=os.path.relpath(design_cwd, cwd),
                     SIBLINGS=siblings, SCRIPTS=str(HERE), GATES=gates,
-                    TOPOLOGY=os.path.relpath(topo_abs, cwd))
-        render(pdir / "CLAUDE.md", cwd / "CLAUDE.md", vals, dry)
-        render(pdir / "design-docs.md", cwd / "docs/agents/design-docs.md", vals, dry)
+                    TOPOLOGY=os.path.relpath(topo_abs, cwd),
+                    RULES_FILE=rules_file, AGENT_DOCS=agent_docs)
+        render(pdir / "CLAUDE.md", cwd / rules_file, vals, dry)
+        render(pdir / "design-docs.md", cwd / agent_docs / "design-docs.md", vals, dry)
 
     return 0
 

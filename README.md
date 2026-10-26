@@ -41,6 +41,11 @@ Run once per system, the skill writes:
 | `docs/agents/{orchestration,ledger,triage-labels,domain,wayfinder,writing-style}.md` | the design repo |
 | `docs/agents/design-docs.md` | each project repo |
 
+With `"rules": "local"` in `topology.json`, the rules go to `CLAUDE.local.md` and the docs to
+`.claude/herdr/docs/` instead, and both are listed in each repo's `.git/info/exclude`. Use it
+when a repo is shared with a team: the rendered rules carry your machine's absolute paths and
+pane IDs, so they must not reach a shared commit, and the team's own `CLAUDE.md` stays as it is.
+
 Everything is derived from `topology.json`: project names from each repo's directory, role
 names from the role graph, relative paths between repos, the channel diagram, per-project bead
 labels and gate commands. Nothing is typed twice.

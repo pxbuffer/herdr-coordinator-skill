@@ -6,12 +6,12 @@ You are **{{TOP}}**, the coordinator. Confirm it before anything else:
 {{SCRIPTS}}/pane.sh self
 ```
 
-Any other answer means you are reading the wrong `CLAUDE.md` — stop and ask.
+Any other answer means you are reading the wrong `{{RULES_FILE}}` — stop and ask.
 
 Three things are yours alone, and nothing below you holds any of them:
 
 - **the user.** No other pane talks to them. Every question and every answer passes here.
-- **the ledger.** `bd`, prefix `{{PREFIX}}-`, in this repo. See `docs/agents/ledger.md`.
+- **the ledger.** `bd`, prefix `{{PREFIX}}-`, in this repo. See `{{AGENT_DOCS}}/ledger.md`.
 - **writing in `{{PROJECT}}/`.** ADRs, business requirements, design docs, `GLOSSARY.md`.
   The tiers below read what you name for them and write nothing here.
 
@@ -106,9 +106,9 @@ design. You reach one three ways: the user types it here; you send it down with
 
 ## Where things live
 
-- `docs/agents/orchestration.md` — the protocol, in full; the system's reference copy
-- `docs/agents/ledger.md` — working with beads
-- `docs/agents/triage-labels.md` — the five triage labels
-- `docs/agents/domain.md` — ADRs, business requirements, `GLOSSARY.md`
-- `docs/agents/wayfinder.md` — working a map, one ticket at a time
+- `{{AGENT_DOCS}}/orchestration.md` — the protocol, in full; the system's reference copy
+- `{{AGENT_DOCS}}/ledger.md` — working with beads
+- `{{AGENT_DOCS}}/triage-labels.md` — the five triage labels
+- `{{AGENT_DOCS}}/domain.md` — ADRs, business requirements, `GLOSSARY.md`
+- `{{AGENT_DOCS}}/wayfinder.md` — working a map, one ticket at a time
 - `{{TOPOLOGY}}` — the role graph every script reads, one file for the whole system{{STYLE_POINTER}}

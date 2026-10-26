@@ -72,7 +72,7 @@ commit hash in its `done` verdict. `main` is never a working branch, and merging
 the user's move — no pane does it.
 
 Gates run before the commit. Each project's gate commands live in its own `gates` field in
-`{{TOPOLOGY}}` and are rendered into that project's `CLAUDE.md`. A malformed
+`{{TOPOLOGY}}` and are rendered into that project's `{{RULES_FILE}}`. A malformed
 or missing field is rejected at render time rather than left to commit unverified work.
 
 A project whose toolchain is not chosen yet carries `"gates": "pending"`. It renders, so you
@@ -107,7 +107,7 @@ user-only skills and built-ins alike.
 
 `/clear` starts a new session, so Herdr drops the agent's name; `send.sh` restores it, and
 the restore is racy enough to need retries, which is why it is scripted rather than typed.
-A cleared pane re-reads `CLAUDE.md`, which makes `/clear` the way to push a rules change
+A cleared pane re-reads `{{RULES_FILE}}`, which makes `/clear` the way to push a rules change
 into a long-running session.
 
 Two hazards, both handled in the scripts rather than left to memory:
