@@ -134,24 +134,58 @@ else:
 GATESPY
 }
 
-# hc_pending_input <role> → the text in the pane's input line, empty when the line
-# is empty. Exit 2 when no Claude Code prompt box is on the screen.
+# hc_pending_input <role> → the text a human typed into the pane's input line,
+# empty when there is none. Exit 2 when no Claude Code prompt box is on the screen.
 #
 # `herdr agent prompt` types into that line and submits it. Text a human typed and
 # did not send is joined to the new text, so a /clear becomes plain text. The line
 # is read from the screen: the "❯" row between the last two horizontal rules, and
 # the rows under it up to the second rule. `herdr agent explain` shows the same
 # box, but it cuts long text short, so it cannot quote what is there.
+#
+# An empty line can show a prompt suggestion in grey. On plain text it looks the
+# same as typed text, so the read keeps the ANSI attributes: Claude Code draws a
+# suggestion dim (SGR 2), and typed text has no dim. Dim text is not input.
 hc_pending_input() {
   local pane
   pane="$(hc_field "$1" pane)" || return 1
-  herdr agent read "$pane" --source detection --lines 60 2>/dev/null | python3 -c '
-import sys
-lines = sys.stdin.read().splitlines()
-rule = [i for i, l in enumerate(lines) if len(l.strip()) >= 10 and set(l.strip()) == {"─"}]
+  herdr agent read "$pane" --source recent --format ansi --lines 60 2>/dev/null | python3 -c '
+import re, sys
+
+ESC = re.compile(r"\x1b\[([0-9;?]*)([A-Za-z])|\x1b[^\[]")
+
+def plain(line):
+    """The row as text, without the characters drawn dim."""
+    out, dim, pos = [], False, 0
+    for m in ESC.finditer(line):
+        if not dim:
+            out.append(line[pos:m.start()])
+        pos = m.end()
+        if m.group(2) != "m":
+            continue
+        codes = (m.group(1) or "0").split(";")
+        i = 0
+        while i < len(codes):
+            c = codes[i] or "0"
+            if c in ("38", "48", "58"):          # extended colour: skip its arguments
+                i += 3 if codes[i + 1:i + 2] == ["5"] else 5
+                continue
+            if c == "0" or c == "22":
+                dim = False
+            elif c == "2":
+                dim = True
+            i += 1
+    if not dim:
+        out.append(line[pos:])
+    return "".join(out).replace("\r", "")
+
+raw = sys.stdin.read().split("\n")
+lines = [plain(l) for l in raw]
+bare = [ESC.sub("", l).replace("\r", "") for l in raw]
+rule = [i for i, l in enumerate(bare) if len(l.strip()) >= 10 and set(l.strip()) == {"─"}]
 for top, bottom in reversed(list(zip(rule, rule[1:]))):
     body = lines[top + 1:bottom]
-    if body and body[0].lstrip().startswith("❯"):
+    if body and bare[top + 1].lstrip().startswith("❯"):
         body[0] = body[0].lstrip()[1:]
         print(" ".join(p for p in (l.strip("  ") for l in body) if p))
         raise SystemExit(0)
@@ -161,8 +195,9 @@ raise SystemExit(2)'
 # hc_erase_input <role> — clear the pane input line with key presses.
 # ctrl+u erases one row of the box only, so each pass sends ctrl+e ctrl+u
 # backspace for a number of rows, then reads the line again. These keys do not
-# stop a working agent, and on an empty line they do nothing. Exit 1 when text
-# stays after every pass.
+# stop a working agent, and on an empty line they do nothing. A suggestion that
+# comes back on the empty line is not input, so the line then counts as empty.
+# Exit 1 when typed text stays after every pass.
 hc_erase_input() {
   local pane keys=() i pass
   pane="$(hc_field "$1" pane)" || return 1
