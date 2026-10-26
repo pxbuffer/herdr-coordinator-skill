@@ -150,16 +150,15 @@ def validate(roles: dict, style: str, layout: str) -> dict:
             if kinds.get(n) == "orchestrator":
                 if r.get("parent") != top:
                     errors.append(f"orchestrator {n} must be a child of {top}, not {r.get('parent')!r}")
+                # No worker child is a solo project: the orchestrator writes the code too.
                 children = r.get("children") or []
                 workers = [c for c in children if kinds.get(c) == "worker"]
-                if not workers:
-                    errors.append(f"orchestrator {n} has no worker child")
-                elif len(workers) > 1:
+                if len(workers) > 1:
                     errors.append(
                         f"orchestrator {n} lists {len(workers)} workers ({', '.join(workers)}); "
-                        f"a project tier is exactly one orchestrator and one worker. Parallelism "
-                        f"belongs in that worker's own sub agents, not in a second pane sharing "
-                        f"the repo")
+                        f"a project tier is one orchestrator with one worker, or a solo "
+                        f"orchestrator with none. Parallelism belongs in sub agents, not in a "
+                        f"second pane sharing the repo")
                 for c in children:
                     if kinds.get(c) != "worker":
                         errors.append(f"orchestrator {n} lists {c} (kind {kinds.get(c)!r}) as a "
@@ -222,6 +221,16 @@ def channels(roles: dict, top: str, prefix: str) -> str:
     return "\n".join(lines)
 
 
+def fill(template: Path, values: dict) -> str:
+    """A template rendered to a string, for a fragment that goes inside another."""
+    r = subprocess.run([str(HERE / "render.py"), str(template)]
+                       + [f"{k}={v}" for k, v in values.items()],
+                       stdin=subprocess.DEVNULL, capture_output=True, text=True)
+    if r.returncode != 0:
+        sys.exit(f"render-rules: {template}\n{r.stderr.strip()}")
+    return r.stdout.rstrip("\n")
+
+
 def render(template: Path, out: Path, values: dict, dry: bool) -> None:
     args = [str(HERE / "render.py"), str(template)]
     if not dry:
@@ -282,7 +291,10 @@ def main() -> int:
     print(f"topology: {topo_path}")
     print(f"coordinator: {top} ({design_cwd.name}/), ledger prefix {prefix}-, style {style}, "
           f"rules {layout}")
-    print(f"projects ({len(projects)}): " + ", ".join(f"{n}→{p.name}/" for n, p in projects.items()))
+    solo = {n for n in orchs
+            if not any(kinds.get(c) == "worker" for c in roles[n].get("children") or [])}
+    print(f"projects ({len(projects)}): " + ", ".join(
+        f"{n}→{p.name}/" + (" (solo)" if n in solo else "") for n, p in projects.items()))
     for w in meta["warnings"]:
         print(f"warning: {w}")
     if check:
@@ -294,6 +306,26 @@ def main() -> int:
     if layout == "local":
         for repo in [design_cwd, *projects.values()]:
             exclude(repo, [f"/{rules_file}", f"/{agent_docs}/"], dry)
+
+    # The team's own tracker docs stay in a "local" repo, and they tell an agent to run
+    # the team's tracker. This section says which tracker the tiers actually use.
+    if layout == "local":
+        coord_tracker = (
+            "## The tracker docs in this repo\n\n"
+            "This repo's own `CLAUDE.md`, `AGENTS.md` and `docs/agents/issue-tracker.md`, where they\n"
+            "exist, describe the tracker for people, such as Linear. The work agents execute lives in\n"
+            f"the ledger: see `{agent_docs}/ledger.md`. Where the two disagree about agent work, the\n"
+            "ledger wins.\n\n")
+        project_tracker = (
+            "## The tracker docs in this repo\n\n"
+            "This repo's own `CLAUDE.md`, `AGENTS.md` and `docs/agents/issue-tracker.md` describe the\n"
+            f"issue tracker for people who work without this system. Here {top} runs `bd`, and your\n"
+            "tier reaches it only through verdicts. When one of those files, or a skill, says to\n"
+            "create, fetch, claim, label or close an issue, send a verdict instead: new work goes up\n"
+            "as `bounced` or as `done` detail, a question as `needs-info`, and "
+            f"{top} writes the\nledger. Their other rules (code, commits, tests) still hold.\n\n")
+    else:
+        coord_tracker = project_tracker = ""
 
     labels = "\n".join(f"- `project-{p.name}` — the `{n}` tier" for n, p in projects.items())
     chan = channels(roles, top, prefix)
@@ -317,7 +349,8 @@ def main() -> int:
                 CHANNELS=chan, PROJECT_LABELS=labels,
                 CHILD_EXAMPLE=orchs[0] if orchs else top,
                 STYLE_SECTION=style_section, STYLE_POINTER=style_pointer,
-                RULES_FILE=rules_file, AGENT_DOCS=agent_docs)
+                RULES_FILE=rules_file, AGENT_DOCS=agent_docs,
+                TRACKER_SECTION=coord_tracker)
     render(cdir / "CLAUDE.md", design_cwd / rules_file, base, dry)
     base["SCRATCH"] = f"/tmp/{prefix}-maps"
     for name in ("orchestration", "ledger", "triage-labels", "domain", "wayfinder"):
@@ -361,10 +394,21 @@ def main() -> int:
                      + "\n\nA gate that fails, and that you cannot fix inside this bead, is a "
                        "`blocked`\nverdict with the failing output in the detail.")
         vals = dict(PROJECT=cwd.name, PREFIX=prefix, TOP=top, MAIN=orch,
-                    AGENT=workers[0], DESIGN_REL=os.path.relpath(design_cwd, cwd),
+                    DESIGN_REL=os.path.relpath(design_cwd, cwd),
                     SIBLINGS=siblings, SCRIPTS=str(HERE), GATES=gates,
                     TOPOLOGY=os.path.relpath(topo_abs, cwd),
-                    RULES_FILE=rules_file, AGENT_DOCS=agent_docs)
+                    RULES_FILE=rules_file, AGENT_DOCS=agent_docs,
+                    TRACKER_SECTION=project_tracker)
+        # A pair splits the tier across two panes; a solo orchestrator holds both
+        # halves. Only these fragments differ, so the template stays one file.
+        if workers:
+            shape = "pair"
+            vals.update(AGENT=workers[0], JOB_ANY="both", JOB_PLAN=orch, JOB_BUILD=workers[0])
+        else:
+            shape = "solo"
+            vals.update(JOB_ANY="yours", JOB_PLAN="yours", JOB_BUILD="yours")
+        for part in ("roles", "tier", "branch"):
+            vals[part.upper()] = fill(pdir / shape / f"{part}.md", vals)
         render(pdir / "CLAUDE.md", cwd / rules_file, vals, dry)
         render(pdir / "design-docs.md", cwd / agent_docs / "design-docs.md", vals, dry)
 

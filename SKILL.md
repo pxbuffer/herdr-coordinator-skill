@@ -14,8 +14,8 @@ Three tiers, each owning exactly one thing:
 - **coordinator** — one pane. Owns the **ledger** (beads) and the user. Lives in the design
   repo and is its only writer.
 - **orchestrator** — one per project. Receives a **brief**, turns it into steps, dispatches
-  them. Holds no ledger.
-- **worker** — one per project. Does the work, with sub agents inside its own session.
+  them. Holds no ledger. A **solo** orchestrator has no worker and writes the code itself.
+- **worker** — at most one per project. Does the work, with sub agents inside its own session.
 
 Work flows down as briefs, outcomes flow up as **verdicts**. A brief is self-contained — bead
 ID, the task in full, every document the receiver may read — because the receiver cannot look
@@ -82,14 +82,25 @@ Exactly one role has no parent: the coordinator. It is the only pane that talks 
 and the only one that runs `bd`. Every orchestrator is its child. **How many projects there
 are is whatever you discovered** — one, two, nine. Nothing in this skill assumes a count.
 
-Each project is exactly one orchestrator and one worker. A project's parallelism lives in
-that worker's own sub agents, where one session still owns the repo; a second worker pane
-would put two sessions in one working tree and buy coordination problems inside a repo to
-save nothing. Propose a one-worker tier per project, and if you discovered a spare pane
-sharing a project's cwd, exclude it explicitly in step 2 rather than wiring it in.
+Each project takes one of two shapes:
+
+- **Pair** — one orchestrator and one worker, two panes sharing the repo. The orchestrator
+  keeps its context for planning and the worker spends its own on the code. Propose this
+  when the project has two panes.
+- **Solo** — one orchestrator with `"children": []`, one pane that splits the brief and
+  writes the code itself, with sub agents for the parallel work. Propose this when the
+  project has one pane, or is small enough that a second session buys little. Its cost is
+  one context for both jobs: it fills sooner, and no second session reads the steps before
+  the code lands.
+
+Never two workers. A project's parallelism lives in sub agents, where one session still owns
+the repo; a second worker pane would put two sessions in one working tree and buy
+coordination problems inside a repo to save nothing. If you discovered a spare pane sharing a
+project's cwd, exclude it explicitly in step 2 rather than wiring it in.
 
 **Derive role names from the repo's directory name**, which is the one name the user already
-chose: `<dirname>-main` for its orchestrator, `<dirname>-agent` for its worker. A directory
+chose: `<dirname>-main` for its orchestrator, `<dirname>-agent` for its worker, if it has
+one. A directory
 called `api-gateway` gives `api-gateway-main` and `api-gateway-agent`. Role names must match
 `[a-z][a-z0-9_-]{0,31}`, so offer a shortening only when a directory name overruns that or
 reads badly, and record whatever the user confirms. From that point the topology is the only
@@ -177,7 +188,7 @@ have one answer. Every child names its parent and every parent lists its childre
 `prefix` is the same on every role: one ledger, one prefix.
 
 `gates` is **required on every orchestrator**: the shell commands that must pass before its
-worker commits, in the order they run. They are project-specific, so they live per project
+worker — or a solo orchestrator itself — commits, in the order they run. They are project-specific, so they live per project
 here and nowhere else — the `## Gates` section in a project's `CLAUDE.md` is rendered output.
 Edit the topology, never the rendered section. This script only reads the topology, so a gate
 list is never rewritten by a render.
@@ -218,7 +229,7 @@ nothing.
 | Value | Rules file | Agent docs | Use when |
 |---|---|---|---|
 | `tracked` | `CLAUDE.md` | `docs/agents/` | default. Every repo is yours, and the rules are versioned with it |
-| `local` | `CLAUDE.local.md` | `.claude/herdr/docs/` | a repo is shared with a team. Both paths go into that repo's `.git/info/exclude`, so nothing reaches a commit, and a team `CLAUDE.md` stays as it is — Claude Code loads both files |
+| `local` | `CLAUDE.local.md` | `.claude/herdr/docs/` | a repo is shared with a team. Both paths go into that repo's `.git/info/exclude`, so nothing reaches a commit, and a team `CLAUDE.md` stays as it is — Claude Code loads both files. Every rules file also gets a "The tracker docs in this repo" section: the team's `CLAUDE.md`, `AGENTS.md` and `docs/agents/issue-tracker.md` describe its own tracker for people, and the section points the agents at the ledger instead |
 
 One value for the whole system, because the tiers point at each other's docs by relative path.
 Elsewhere in this file, read `CLAUDE.md` and `docs/agents/` as the chosen layout's paths.
@@ -233,8 +244,8 @@ internal consistency, the second checks it against what is actually running:
 
 `--check` rejects a second parentless role, a parent/children pair that disagrees, two roles
 on one pane, a mixed ledger prefix, an unknown `style` or `rules` value, an orchestrator with no `gates`
-field or a malformed gate list, an orchestrator whose children are not exactly one worker,
-and a project tier whose panes do not share a cwd. It also rejects a topology living inside a
+field or a malformed gate list, an orchestrator with more than one worker or with a child
+that is not a worker (one worker is a pair, none is solo), and a project tier whose panes do not share a cwd. It also rejects a topology living inside a
 repo it describes, and any repo-local copy of it. Pending gates are reported as a warning and
 still render. Each of those would otherwise
 render rules that quietly describe a different system than the scripts enforce. Validation

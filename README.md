@@ -12,7 +12,10 @@ user ──► coordinator                design repo · the ledger · the only 
             ├──► orchestrator ──► worker ──► sub agents (Task tool)
             │    project repo     project repo
             │
-            └──► … one pair per project, however many there are
+            ├──► orchestrator ──► sub agents (Task tool)
+            │    project repo · solo: plans and writes the code
+            │
+            └──► … one tier per project, however many there are
 
 briefs flow down · verdicts flow up · no horizontal calls
 ```
@@ -21,8 +24,9 @@ briefs flow down · verdicts flow up · no horizontal calls
   (ADRs, business requirements, design docs, glossary) and is its only writer.
 - **orchestrator** — one per project. Receives a **brief**, splits it into steps, dispatches
   them. Holds no ledger.
-- **worker** — one per project. Does the work, parallelising inside its own session with sub
-  agents.
+- **worker** — at most one per project. Does the work, parallelising inside its own session
+  with sub agents. A **solo** project has none: its orchestrator writes the code too, at the
+  cost of one context holding both the plan and the code.
 
 A **brief** is self-contained — bead ID, the task in full, and every document the receiver may
 read — because the receiver cannot look anything up. A **verdict** (`done` / `blocked` /
@@ -148,8 +152,8 @@ scripts/pane.sh status              # the graph against what is actually running
 `--check` is strict, because a topology that renders wrong produces rules that quietly
 describe a different system than the scripts enforce. It rejects: a second parentless role, a
 parent/children pair that disagrees, two roles on one pane, a mixed ledger prefix, an unknown
-`style`, a missing or malformed `gates` list, an orchestrator whose children are not exactly
-one worker, a project tier whose panes do not share a directory, and a shadowing topology
+`style`, a missing or malformed `gates` list, an orchestrator with more than one worker or a
+non-worker child, a project tier whose panes do not share a directory, and a shadowing topology
 copy. Pending gates are a warning.
 
 ## Day to day

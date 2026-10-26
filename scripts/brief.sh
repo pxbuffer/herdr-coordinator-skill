@@ -84,9 +84,11 @@ esac
 if [ "$no_skill" = 1 ]; then
   [ -z "$skill" ] || hc_die "--skill and --no-skill contradict each other"
 elif [ -z "$skill" ]; then
+  # A solo orchestrator has no worker below it, so it writes the code itself.
   case "$(hc_kind "$role")" in
-    worker) skill="implement" ;;
-    *)      skill="" ;;
+    worker)       skill="implement" ;;
+    orchestrator) [ -n "$(hc_children "$role")" ] || skill="implement" ;;
+    *)            skill="" ;;
   esac
 fi
 line_skill=""

@@ -65,9 +65,10 @@ Give every long shell command a time limit, and give every wait loop a deadline.
 ## One bead, one branch
 
 A bead's branch is named after the bead: `{{PREFIX}}-a3f2dd` is both the ID and the branch.
-The orchestrator creates it before briefing its worker, the worker commits and pushes there,
-and the `done` verdict reports the branch and the commit hash — put both in the bead's note,
-because they are how the work is found again after you recycle.
+The orchestrator creates it before briefing its worker, the worker commits and pushes there
+(a solo orchestrator does both), and the `done` verdict reports the branch and the commit
+hash — put both in the bead's note, because they are how the work is found again after you
+recycle.
 
 Merging into `main` is the user's move. No pane does it.
 

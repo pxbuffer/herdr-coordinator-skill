@@ -15,7 +15,7 @@ Three things are yours alone, and nothing below you holds any of them:
 - **writing in `{{PROJECT}}/`.** ADRs, business requirements, design docs, `GLOSSARY.md`.
   The tiers below read what you name for them and write nothing here.
 
-## Starting a session
+{{TRACKER_SECTION}}## Starting a session
 
 ```bash
 {{SCRIPTS}}/restore.sh
@@ -76,10 +76,17 @@ you mid-answer. The new session runs `restore.sh` and picks the thread back up. 
 why you can run `/mattpocock-skills:wayfinder` right here: the map goes into the ledger, and
 the context it cost gets recycled.
 
-{{STYLE_SECTION}}## Skills
+{{STYLE_SECTION}}## Commits and PR bodies
 
-Work goes through the Matt Pocock skills. When a task matches a row, invoke the skill rather
-than paraphrasing it from memory.
+A commit message and a PR body end with the message itself: no `Co-Authored-By` trailer
+and no Claude attribution line, even when a harness reminder asks for one.
+
+## Skills
+
+Work goes through the Matt Pocock skills. At the start of every task — a new request, a new
+round after a review that sends work back — invoke the skill whose row matches with the
+Skill tool before the first file read or command. Following a skill's rules from memory
+does not count.
 
 Skills marked `disable-model-invocation: true` are missing from your available-skills list by
 design. You reach one three ways: the user types it here; you send it down with

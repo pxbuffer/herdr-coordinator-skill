@@ -108,8 +108,8 @@ except Exception: print("no-agent")' 2>/dev/null || echo no-agent
 }
 
 # hc_gates_state <role> → pending | defined | none
-# Resolves the gates of the role's PROJECT: an orchestrator's own gates, or a
-# worker's parent's. A role in no project (the coordinator) resolves to "none".
+# Resolves the gates of the role's PROJECT: an orchestrator's own gates (a solo
+# orchestrator's included), or a worker's parent's. A role in no project (the coordinator) resolves to "none".
 hc_gates_state() {
   python3 - "$(hc_topology)" "$1" <<'GATESPY'
 import json, sys

@@ -14,9 +14,19 @@ user, an orchestrator owns how a brief becomes steps, a worker owns the code. Wo
 down as **briefs**, outcomes flow up as **verdicts**, and there are no horizontal calls —
 two panes that need each other's output have a missing parent, not a missing channel.
 
-One worker per orchestrator, deliberately. A worker parallelises inside its own session with
-sub agents, so a second worker pane would add nothing but two sessions writing one working
-tree. `render-rules.py --check` enforces this.
+A project tier takes one of two shapes:
+
+- **Pair** — an orchestrator and one worker, two panes in one repo. The orchestrator splits
+  the brief and keeps its context for planning; the worker's context goes on the code.
+- **Solo** — an orchestrator with `"children": []`, one pane that splits the brief and writes
+  the code itself. It fits a project small enough, or a system short enough of panes, that a
+  second session buys little. The cost is one context for both jobs: it fills faster, and no
+  second session reads the steps before the code lands. Sub agents carry the parallel work
+  and the independent review.
+
+Never two workers. A worker parallelises inside its own session with sub agents, so a second
+worker pane would add nothing but two sessions writing one working tree.
+`render-rules.py --check` enforces this.
 
 The writing-style rule binds {{TOP}} alone. {{TOP}} writes the user's replies and the design
 documents, and it writes the briefs that are a receiver's whole contract — plain short
@@ -61,15 +71,16 @@ parses it to move the bead — prose it cannot parse leaves the ledger wrong, an
 being wrong is the one failure this design cannot absorb.
 
 A verdict hops one tier at a time. A worker reports to its orchestrator, which reports
-onward — each bead individually, as it lands, rather than batched. The ledger stays live
+onward; a solo orchestrator reports straight to the coordinator — each bead individually, as
+it lands, rather than batched. The ledger stays live
 and the coordinator recycles its context when that gets expensive.
 
 ## One bead, one branch
 
 A bead's ID is also its branch name. The orchestrator creates the branch before it briefs its
 worker; the worker commits only that bead's files there, pushes, and reports the branch and
-commit hash in its `done` verdict. `main` is never a working branch, and merging into it is
-the user's move — no pane does it.
+commit hash in its `done` verdict. A solo orchestrator does all of that itself. `main` is
+never a working branch, and merging into it is the user's move — no pane does it.
 
 Gates run before the commit. Each project's gate commands live in its own `gates` field in
 `{{TOPOLOGY}}` and are rendered into that project's `{{RULES_FILE}}`. A malformed
@@ -87,8 +98,9 @@ committed by then, so the next bead branches from something real.
 
 ## Split, or bounce
 
-An orchestrator may break one brief into as many steps for its worker as it likes, off its
-own context, and the ledger never hears about them. Only the bead's outcome is ledger
+An orchestrator may break one brief into as many steps as it likes — for its worker, or for
+its own sub agents when it is solo — off its own context, and the ledger never hears about
+them. Only the bead's outcome is ledger
 business.
 
 It bounces instead when the work exceeds what the brief scoped, or belongs to another
