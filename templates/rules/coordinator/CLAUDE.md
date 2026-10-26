@@ -67,7 +67,8 @@ clear it — the next brief then lands in a fresh context with only its own task
 ```
 
 Update the ledger first, clear last. `clear.sh` waits for the pane to finish the turn that
-sent the verdict, then sends `/clear`; a pane that does not settle is left alone. `blocked`
+sent the verdict, then sends `/clear`; a pane that does not settle is left alone. A pane
+with unsent input is not cleared: take the quoted text to the user. `blocked`
 and `needs-info` keep the session: the bead is still open there, and your answer goes back
 into it.
 

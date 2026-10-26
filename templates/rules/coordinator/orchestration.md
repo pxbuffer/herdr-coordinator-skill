@@ -127,13 +127,16 @@ the restore is racy enough to need retries, which is why it is scripted rather t
 A cleared pane re-reads `{{RULES_FILE}}`, which makes `/clear` the way to push a rules change
 into a long-running session.
 
-Two hazards, both handled in the scripts rather than left to memory:
+Three hazards, all handled in the scripts rather than left to memory:
 
 - **Ordering.** Clearing discards whatever has not been reported. `send.sh` refuses to clear
   a `working` pane; `recycle.sh` prints a flush checklist before clearing the coordinator.
 - **Timing.** A `/clear` aimed at this pane queues on its own input and fires at the end of
   the turn, so self-clearing is safe by construction. Clearing someone else is the case that
   needs the idle check.
+- **Pending input.** A pane's input line can hold text that a human typed and did not
+  send. `send.sh` refuses to deliver on top of it and quotes it. Take it to the user: they
+  send it, or they let you pass `--discard-input`.
 
 `/compact` keeps both the session and the name, and is the cheaper move when the thread still
 matters.

@@ -134,6 +134,47 @@ else:
 GATESPY
 }
 
+# hc_pending_input <role> → the text in the pane's input line, empty when the line
+# is empty. Exit 2 when no Claude Code prompt box is on the screen.
+#
+# `herdr agent prompt` types into that line and submits it. Text a human typed and
+# did not send is joined to the new text, so a /clear becomes plain text. The line
+# is read from the screen: the "❯" row between the last two horizontal rules, and
+# the rows under it up to the second rule. `herdr agent explain` shows the same
+# box, but it cuts long text short, so it cannot quote what is there.
+hc_pending_input() {
+  local pane
+  pane="$(hc_field "$1" pane)" || return 1
+  herdr agent read "$pane" --source detection --lines 60 2>/dev/null | python3 -c '
+import sys
+lines = sys.stdin.read().splitlines()
+rule = [i for i, l in enumerate(lines) if len(l.strip()) >= 10 and set(l.strip()) == {"─"}]
+for top, bottom in reversed(list(zip(rule, rule[1:]))):
+    body = lines[top + 1:bottom]
+    if body and body[0].lstrip().startswith("❯"):
+        body[0] = body[0].lstrip()[1:]
+        print(" ".join(p for p in (l.strip("  ") for l in body) if p))
+        raise SystemExit(0)
+raise SystemExit(2)'
+}
+
+# hc_erase_input <role> — clear the pane input line with key presses.
+# ctrl+u erases one row of the box only, so each pass sends ctrl+e ctrl+u
+# backspace for a number of rows, then reads the line again. These keys do not
+# stop a working agent, and on an empty line they do nothing. Exit 1 when text
+# stays after every pass.
+hc_erase_input() {
+  local pane keys=() i pass
+  pane="$(hc_field "$1" pane)" || return 1
+  for i in $(seq 1 10); do keys+=(ctrl+e ctrl+u backspace); done
+  for pass in 1 2 3 4 5; do
+    herdr agent send-keys "$pane" "${keys[@]}" >/dev/null 2>&1 || return 1
+    sleep 0.5
+    [ -z "$(hc_pending_input "$1")" ] && return 0
+  done
+  return 1
+}
+
 hc_children() { hc_field "$1" children | tr ',' '\n' | grep -v '^$' || true; }
 hc_parent()   { hc_field "$1" parent; }
 hc_kind()     { hc_field "$1" kind; }

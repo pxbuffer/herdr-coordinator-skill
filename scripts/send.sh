@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Send a prompt — or a slash command — to a role, with the protocol enforced.
 #
-#   send.sh <role> <text...> [--wait] [--timeout MS] [--force-clear]
+#   send.sh <role> <text...> [--wait] [--timeout MS] [--force-clear] [--discard-input]
 #   send.sh <role> "/clear"
 #   send.sh <role> "/mattpocock-skills:implement <brief>"
 #
@@ -16,17 +16,24 @@
 # when driving the system by hand from outside any role.
 #
 # Prefer brief.sh for dispatching work; this is the raw channel underneath it.
+#
+# The prompt goes into the pane's input line. When that line holds text that a
+# human typed and did not send, the new text is joined to it. So send.sh reads
+# the line first, and refuses with exit 5 when it is not empty. The user decides
+# what to do with that text: they send it, or they let you pass --discard-input,
+# which erases the line and confirms that it is empty before the delivery.
 
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/env.sh"
 hc_require_herdr
 
-role="${1:?usage: send.sh <role> <text...> [--wait] [--timeout MS] [--force-clear]}"; shift
-wait=0; timeout=""; force_clear=0; parts=()
+role="${1:?usage: send.sh <role> <text...> [--wait] [--timeout MS] [--force-clear] [--discard-input]}"; shift
+wait=0; timeout=""; force_clear=0; discard=0; parts=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --wait) wait=1 ;;
     --timeout) timeout="${2:?--timeout needs a value}"; shift ;;
     --force-clear) force_clear=1 ;;
+    --discard-input) discard=1 ;;
     *) parts+=("$1") ;;
   esac
   shift
@@ -55,6 +62,23 @@ case "$text" in
     fi
     ;;
 esac
+
+# Text already in the input line would join the delivery. Only the user may
+# discard it, because it can be their own work in progress.
+pending="$(hc_pending_input "$role")"; prc=$?
+if [ $prc -eq 2 ]; then
+  echo "note: no input line found in $role's pane; the delivery runs without the check" >&2
+elif [ -n "$pending" ]; then
+  if [ "$discard" != 1 ]; then
+    printf '%s
+' \
+      "herdr-coordinator: $role has unsent input: \"$pending\"." \
+      "  Ask the user to send or erase it, then retry. Pass --discard-input to erase it." >&2
+    exit 5
+  fi
+  hc_erase_input "$role" || hc_die "could not erase the input line of $role; it still holds: \"$(hc_pending_input "$role")\""
+  echo "erased the unsent input of $role: \"$pending\"" >&2
+fi
 
 target="$(hc_target "$role")"
 

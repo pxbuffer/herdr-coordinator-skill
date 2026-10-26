@@ -2,7 +2,7 @@
 # Dispatch one bead downward as a self-contained brief.
 #
 #   brief.sh <role> <bead> --task <text> [--doc <path>]... [--skill <name>|--no-skill]
-#            [--bootstrap] [--wait]
+#            [--bootstrap] [--wait] [--discard-input]
 #   brief.sh <role> <bead> --task "Implement the login form" \
 #            --doc ../<design-repo>/docs/adr/ADR-0007.md
 #   brief.sh <role> <bead> --no-skill --task "Which role did you resolve?"
@@ -23,6 +23,9 @@
 # report.sh, landing in your pane as input — so blocking here buys nothing and
 # costs you the ability to dispatch the next brief. Pass --wait only when you
 # genuinely intend to sit on this one bead.
+#
+# Unsent text in the receiver's input line stops the brief with exit 5, as in
+# send.sh. Pass --discard-input only when the user says so.
 
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/env.sh"
 hc_require_herdr
@@ -31,7 +34,7 @@ role="${1:?usage: brief.sh <role> <bead> --task <text> [--doc <path>]... [--skil
 bead="${2:?usage: brief.sh <role> <bead> --task <text> [--doc <path>]... [--skill <name>] [--wait]}"
 shift 2
 
-task=""; skill=""; no_skill=0; bootstrap=0; wait=0; timeout=""; docs=()
+task=""; skill=""; no_skill=0; bootstrap=0; wait=0; timeout=""; discard=0; docs=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --task)    task="${2:?--task needs text}"; shift ;;
@@ -40,6 +43,7 @@ while [ $# -gt 0 ]; do
     --no-skill) no_skill=1 ;;
     --bootstrap) bootstrap=1 ;;
     --wait)    wait=1 ;;
+    --discard-input) discard=1 ;;
     --timeout) timeout="${2:?--timeout needs a value}"; shift ;;
     *) hc_die "unknown argument: $1" ;;
   esac
@@ -137,7 +141,8 @@ prompt="$("$HC_SCRIPTS/render.py" "$HC_SKILL/templates/brief.md" \
 args=("$role" "$prompt")
 [ "$wait" = 1 ] && args+=(--wait)
 [ -n "$timeout" ] && args+=(--timeout "$timeout")
-"$HC_SCRIPTS/send.sh" "${args[@]}"
+[ "$discard" = 1 ] && args+=(--discard-input)
+"$HC_SCRIPTS/send.sh" "${args[@]}" || exit $?
 
 if [ "$wait" = 1 ]; then
   "$HC_SCRIPTS/wait.sh" "$role" ${timeout:+--timeout "$timeout"}; rc=$?
