@@ -46,10 +46,16 @@ Stop and say so if any of these fails — each one is a wall, not a warning:
 test "${HERDR_ENV:-}" = 1          # inside a Herdr pane
 command -v herdr bd                # the CLIs the system drives
 herdr status                       # server running and protocol-compatible
+"$S/scripts/check-skills.py"       # the Matt Pocock skills the rules name
 ```
 
 `bd` is required because the coordinator tracks work in beads. Without it there is no ledger,
 and with no ledger the verdict protocol has nowhere to land.
+
+Every tier's rules route work through the `mattpocock-skills` plugin. `check-skills.py`
+reads the names the templates use and confirms the plugin is installed, enabled, and ships
+each one; it prints the install command when it is not. `render-rules.py --check` repeats it
+as a warning, and `brief.sh` refuses a `--skill` the plugin does not ship.
 
 ## 2. Discover the topology
 

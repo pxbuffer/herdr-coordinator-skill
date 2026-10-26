@@ -295,6 +295,12 @@ def main() -> int:
             if not any(kinds.get(c) == "worker" for c in roles[n].get("children") or [])}
     print(f"projects ({len(projects)}): " + ", ".join(
         f"{n}→{p.name}/" + (" (solo)" if n in solo else "") for n, p in projects.items()))
+    # The rules tell every tier to invoke these skills; a missing one is not a
+    # topology fault, so it warns rather than refusing to render.
+    r = subprocess.run([str(HERE / "check-skills.py")], stdin=subprocess.DEVNULL,
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        meta["warnings"].append(r.stderr.strip().removeprefix("check-skills: "))
     for w in meta["warnings"]:
         print(f"warning: {w}")
     if check:

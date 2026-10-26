@@ -154,7 +154,8 @@ describe a different system than the scripts enforce. It rejects: a second paren
 parent/children pair that disagrees, two roles on one pane, a mixed ledger prefix, an unknown
 `style`, a missing or malformed `gates` list, an orchestrator with more than one worker or a
 non-worker child, a project tier whose panes do not share a directory, and a shadowing topology
-copy. Pending gates are a warning.
+copy. Pending gates are a warning, and so is a missing `mattpocock-skills` plugin or skill
+(`scripts/check-skills.py` checks it on its own).
 
 ## Day to day
 

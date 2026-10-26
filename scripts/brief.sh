@@ -92,7 +92,11 @@ elif [ -z "$skill" ]; then
   esac
 fi
 line_skill=""
-[ -n "$skill" ] && line_skill="/mattpocock-skills:$skill "
+if [ -n "$skill" ]; then
+  # A slash command naming a skill that is not installed reaches the pane as plain text.
+  "$HC_SCRIPTS/check-skills.py" "$skill" >/dev/null || exit 1
+  line_skill="/mattpocock-skills:$skill "
+fi
 
 if [ "${#docs[@]}" -gt 0 ]; then
   doc_block="$(printf '  - %s\n' "${docs[@]}")"
