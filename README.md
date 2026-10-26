@@ -163,6 +163,7 @@ copy. Pending gates are a warning, and so is a missing `mattpocock-skills` plugi
 scripts/restore.sh                            # coordinator, at session start
 scripts/brief.sh <role> <bead> --task "…" --doc "…"   # dispatch
 scripts/report.sh <bead> done "…"             # the one path upward
+scripts/clear.sh <role>                       # coordinator, after done or bounced
 scripts/recycle.sh --flushed                  # coordinator clears its own context
 scripts/read.sh <role> --state                # a pane that went quiet
 ```

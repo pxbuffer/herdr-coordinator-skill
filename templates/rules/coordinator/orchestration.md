@@ -66,6 +66,11 @@ blocking buys nothing. Pass `--wait` only to sit deliberately on one bead.
 {{SCRIPTS}}/report.sh {{PREFIX}}-a3f2dd bounced    "<why it exceeds the brief>"
 ```
 
+After `done` or `bounced`, the coordinator clears the orchestrator with `clear.sh <role>`,
+so each bead starts in a fresh session. That makes one bead in flight per orchestrator the
+rule: a second brief in the session would go with the first one's clear. `blocked` and
+`needs-info` keep the session, because the bead is still open there.
+
 One bead, one verdict, reported once. `report.sh` enforces the format because the coordinator
 parses it to move the bead — prose it cannot parse leaves the ledger wrong, and the ledger
 being wrong is the one failure this design cannot absorb.

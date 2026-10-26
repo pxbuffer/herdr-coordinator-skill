@@ -42,6 +42,10 @@ including straight after a `/clear`. Run it first, every session.
    Name every document it may read. A document you leave out is one it does not know exists.
 5. Carry on. `brief.sh` does not block: the verdict arrives on its own as input to this pane.
 6. On each verdict, update the ledger — see below. The ledger is only as right as you keep it.
+7. After `done` or `bounced`, clear the orchestrator that sent it.
+
+One bead in flight per orchestrator. Brief a project's next bead only after the previous
+one's verdict and clear: the clear would wipe a second brief already in that session.
 
 ## Handling a verdict
 
@@ -50,10 +54,22 @@ touch the ledger, so this line is the only thing that moves the bead.
 
 | Verdict | What it means | What you do |
 |---|---|---|
-| `done` | Finished | `bd note` the branch, commit hash and gate results, then `bd close` |
+| `done` | Finished | `bd note` the branch, commit hash and gate results, `bd close`, then `clear.sh` |
 | `blocked` | Something is in the way | `bd note`, `bd label add … blocked`, clear the blocker or take it to the user |
 | `needs-info` | It needs an answer, and carries a recommendation | `bd note`, `bd label add … needs-info`; take the recommendation or answer it yourself, then re-brief — or put it to the user |
-| `bounced` | Bigger or other than the brief | `bd note` the reason, split into new beads, or re-route to another project |
+| `bounced` | Bigger or other than the brief | `bd note` the reason, split into new beads or re-route to another project, then `clear.sh` |
+
+A finished bead leaves nothing in the orchestrator's session that the next one needs, so
+clear it — the next brief then lands in a fresh context with only its own task and the rules:
+
+```bash
+{{SCRIPTS}}/clear.sh {{CHILD_EXAMPLE}}
+```
+
+Update the ledger first, clear last. `clear.sh` waits for the pane to finish the turn that
+sent the verdict, then sends `/clear`; a pane that does not settle is left alone. `blocked`
+and `needs-info` keep the session: the bead is still open there, and your answer goes back
+into it.
 
 A `bounced` verdict is a correct outcome, not a failure: the tier below may break a brief
 into steps of its own, and it bounces exactly when the work turns out to exceed what you

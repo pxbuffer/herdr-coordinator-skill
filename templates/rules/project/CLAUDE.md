@@ -25,6 +25,10 @@ Exactly one verdict per bead, when you finish or stop:
 `report.sh` sends it one tier up and nowhere else. The format is fixed: {{TOP}} parses that
 line to move the bead, and it is the only evidence the bead moved at all.
 
+After a `done` or `bounced` verdict, {{TOP}} clears this pane with `/clear`, and the next
+brief starts a fresh session. Keep nothing in your context that a later bead needs: what
+matters goes into the commit or the verdict. A `blocked` or `needs-info` keeps the session.
+
 Give `needs-info` your recommended answer along with the question — `"<question> — recommend:
 <answer>"`. You have the most context on it, and a question that arrives with a recommendation
 resolves in one hop instead of three.
