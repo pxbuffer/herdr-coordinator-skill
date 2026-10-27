@@ -210,6 +210,36 @@ hc_erase_input() {
   return 1
 }
 
+# hc_await_submit <role> <needle> → did the pane take a line that holds <needle>?
+# `herdr agent prompt` without --wait exits 0 when the keys are sent, not when the
+# line is submitted. A line that stays in the input box is lost when a later
+# prompt or a human overwrites it. So this reads the input line for some seconds.
+# When <needle> leaves the line, the session took it: an idle session starts a
+# turn, and a working one queues the message. When the line still holds <needle>,
+# or the "[Pasted text" marker that stands in for a long paste, this sends one
+# Enter and reads again.
+# Exit 0 when the line is free of the needle, 1 when it stays after the Enter,
+# 2 when no prompt box is on the screen.
+hc_await_submit() {
+  local role="$1" needle="$2" pane line rc i enter
+  pane="$(hc_field "$role" pane)" || return 1
+  for enter in 0 1; do
+    if [ "$enter" = 1 ]; then
+      herdr agent send-keys "$pane" enter >/dev/null 2>&1 || return 1
+    fi
+    for i in $(seq 1 10); do
+      sleep 0.5
+      line="$(hc_pending_input "$role")"; rc=$?
+      [ $rc -eq 2 ] && return 2
+      case "$line" in
+        *"$needle"*|*"[Pasted text"*) ;;
+        *) return 0 ;;
+      esac
+    done
+  done
+  return 1
+}
+
 hc_children() { hc_field "$1" children | tr ',' '\n' | grep -v '^$' || true; }
 hc_parent()   { hc_field "$1" parent; }
 hc_kind()     { hc_field "$1" kind; }
