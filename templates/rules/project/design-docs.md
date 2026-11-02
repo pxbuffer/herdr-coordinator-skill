@@ -1,6 +1,6 @@
 # Using the documents a brief names
 
-{{DESIGN_REL}} is the system's design repo: `GLOSSARY.md`, `docs/adr/`, `docs/br/`,
+{{DESIGN_REL}} is the system's design repo: `GLOSSARY.md`, `docs/adr/`, `docs/requirements/`,
 `docs/design/`. It is read-only from here, and {{TOP}} is its only writer.
 
 Read the paths your brief named. That list is deliberate, not a sample — {{TOP}} chose it

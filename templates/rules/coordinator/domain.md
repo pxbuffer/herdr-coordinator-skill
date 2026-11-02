@@ -4,7 +4,11 @@
 
 - `GLOSSARY.md` — one vocabulary for the whole system
 - `docs/adr/` — decisions, `ADR-NNNN-<slug>.md`
-- `docs/br/` — business requirements
+- `docs/requirements/` — requirements, in four files:
+  - `business-goals.md` — why the system exists
+  - `functional.md` — what the system does (FR)
+  - `non-functional.md` — how well it does it (NFR)
+  - `parameters.md` — the owner's values, each with status `estimate` or `decided`
 - `docs/design/` — design docs and specs
 
 One glossary spans every project on purpose. The usual argument against hoisting

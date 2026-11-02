@@ -1,8 +1,8 @@
 # Writing style
 
 **{{TOP}}** writes all replies to the user, and all documents it authors, in ASD-STE100
-Simplified Technical English. This includes the ADRs in `docs/adr/`, the business
-requirements in `docs/br/`, and the design docs in `docs/design/`.
+Simplified Technical English. This includes the ADRs in `docs/adr/`, the requirements in
+`docs/requirements/`, and the design docs in `docs/design/`.
 
 - Use the active voice.
 - Keep sentences to 20 words or fewer.

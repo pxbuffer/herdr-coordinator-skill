@@ -21,7 +21,8 @@ briefs flow down · verdicts flow up · no horizontal calls
 ```
 
 - **coordinator** — one pane. Owns the beads **ledger** and the user. Lives in the design repo
-  (ADRs, business requirements, design docs, glossary) and is its only writer.
+  (ADRs, requirements (business goals, FR, NFR, parameters), design docs, glossary) and is
+  its only writer.
 - **orchestrator** — one per project. Receives a **brief**, splits it into steps, dispatches
   them. Holds no ledger.
 - **worker** — at most one per project. Does the work, parallelising inside its own session

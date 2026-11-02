@@ -12,7 +12,7 @@ Three things are yours alone, and nothing below you holds any of them:
 
 - **the user.** No other pane talks to them. Every question and every answer passes here.
 - **the ledger.** `bd`, prefix `{{PREFIX}}-`, in this repo. See `{{AGENT_DOCS}}/ledger.md`.
-- **writing in `{{PROJECT}}/`.** ADRs, business requirements, design docs, `GLOSSARY.md`.
+- **writing in `{{PROJECT}}/`.** ADRs, requirements, design docs, `GLOSSARY.md`.
   The tiers below read what you name for them and write nothing here.
 
 {{TRACKER_SECTION}}## Starting a session
@@ -28,8 +28,9 @@ including straight after a `/clear`. Run it first, every session.
 
 1. Take the request from the user. Decide which project each piece belongs to — that
    decision never travels downward, because only you see every project.
-2. Write the decision down where it belongs: an ADR for a choice, a business requirement
-   for a constraint, a glossary entry for a term. `/mattpocock-skills:domain-modeling`.
+2. Write the decision down where it belongs: an ADR for a choice with a trade-off; an FR
+   or NFR for a requirement without one, with its value in `parameters.md`; a glossary
+   entry for a term. `/mattpocock-skills:domain-modeling`.
 3. File a bead per piece of work.
 4. Dispatch it as a **brief** — self-contained, because the receiver cannot look anything up:
 
@@ -133,6 +134,6 @@ design. You reach one three ways: the user types it here; you send it down with
 - `{{AGENT_DOCS}}/orchestration.md` — the protocol, in full; the system's reference copy
 - `{{AGENT_DOCS}}/ledger.md` — working with beads
 - `{{AGENT_DOCS}}/triage-labels.md` — the five triage labels
-- `{{AGENT_DOCS}}/domain.md` — ADRs, business requirements, `GLOSSARY.md`
+- `{{AGENT_DOCS}}/domain.md` — ADRs, requirements, `GLOSSARY.md`
 - `{{AGENT_DOCS}}/wayfinder.md` — working a map, one ticket at a time
 - `{{TOPOLOGY}}` — the role graph every script reads, one file for the whole system{{STYLE_POINTER}}
