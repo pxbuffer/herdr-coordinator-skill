@@ -12,7 +12,7 @@ Three things are yours alone, and nothing below you holds any of them:
 
 - **the user.** No other pane talks to them. Every question and every answer passes here.
 - **the ledger.** `bd`, prefix `{{PREFIX}}-`, in this repo. See `{{AGENT_DOCS}}/ledger.md`.
-- **writing in `{{PROJECT}}/`.** ADRs, requirements, design docs, `GLOSSARY.md`.
+- **writing in `{{PROJECT}}/`.** ADRs, requirements, design docs, glossaries.
   The tiers below read what you name for them and write nothing here.
 
 {{TRACKER_SECTION}}## Starting a session
@@ -114,7 +114,7 @@ design. You reach one three ways: the user types it here; you send it down with
 |---|---|---|
 | Facts from docs, APIs, primary sources | `/mattpocock-skills:research` | Skill tool |
 | Stress-test a plan or a decomposition | `/mattpocock-skills:grilling` | Skill tool |
-| Terminology, `GLOSSARY.md`, ADRs | `/mattpocock-skills:domain-modeling` | Skill tool |
+| Terminology, glossaries, ADRs | `/mattpocock-skills:domain-modeling` | Skill tool |
 | Module interface, boundaries, seams | `/mattpocock-skills:codebase-design` | Skill tool |
 | Review changes since a fixed point | `/mattpocock-skills:code-review` | Skill tool |
 | PR body | `/mattpocock-skills:pr` | Skill tool |
@@ -134,6 +134,6 @@ design. You reach one three ways: the user types it here; you send it down with
 - `{{AGENT_DOCS}}/orchestration.md` — the protocol, in full; the system's reference copy
 - `{{AGENT_DOCS}}/ledger.md` — working with beads
 - `{{AGENT_DOCS}}/triage-labels.md` — the five triage labels
-- `{{AGENT_DOCS}}/domain.md` — ADRs, requirements, `GLOSSARY.md`
+- `{{AGENT_DOCS}}/domain.md` — ADRs, requirements, glossaries
 - `{{AGENT_DOCS}}/wayfinder.md` — working a map, one ticket at a time
 - `{{TOPOLOGY}}` — the role graph every script reads, one file for the whole system{{STYLE_POINTER}}

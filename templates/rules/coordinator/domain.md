@@ -2,7 +2,8 @@
 
 `{{PROJECT}}/` is the system's design repo and you are its only writer. Layout:
 
-- `GLOSSARY.md` — one vocabulary for the whole system
+- `GLOSSARY-MAP.md` — the bounded contexts, their relationships and the system-wide terms
+- `docs/contexts/<context>/GLOSSARY.md` — the terms of each context
 - `docs/adr/` — decisions, `ADR-NNNN-<slug>.md`
 - `docs/requirements/` — requirements, in four files:
   - `business-goals.md` — why the system exists
@@ -11,10 +12,11 @@
   - `parameters.md` — the owner's values, each with status `estimate` or `decided`
 - `docs/design/` — design docs and specs
 
-One glossary spans every project on purpose. The usual argument against hoisting
-vocabulary — that it couples codebases — is the argument for it here: no project can read
-another, so a shared definition in a place they can all read is the only way they agree on
-what a word means.
+The glossaries live here rather than in the projects on purpose. The usual argument against
+hoisting vocabulary — that it couples codebases — is the argument for it here: no project
+can read another, so a shared definition in a place they can all read is the only way they
+agree on what a word means. A term lives in its home context's glossary; `GLOSSARY-MAP.md`
+holds the terms every context shares and says how the contexts relate.
 
 ## Writing
 

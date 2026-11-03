@@ -50,7 +50,7 @@ git show research/<name>:docs/research/<name>.md
 
 Change no code. A map decides; it does not build.
 
-When `/mattpocock-skills:domain-modeling` calls for a `GLOSSARY.md` entry or an ADR, raise it
+When `/mattpocock-skills:domain-modeling` calls for a glossary entry or an ADR, raise it
 in the grilling round rather than writing it straight away. After the user agrees: run the
 documentation gates, commit only those files on the current branch, and push.
 
